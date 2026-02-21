@@ -28,10 +28,11 @@ export default async function Page({ params }: { params: { id: string } }) {
     .eq("id", params.id)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  const privateClass = Array.isArray(r.private_class)
-  ? r.private_class[0]
-  : r.private_class;
   if (!r) redirect("/p/requests");
+  const privateClass = Array.isArray((r as any).private_class)
+  ? (r as any).private_class[0]
+  : (r as any).private_class;
+ 
 
   const acceptAction = acceptCounterOffer.bind(null, params.id);
   const declineAction = declineCounterOffer.bind(null, params.id);

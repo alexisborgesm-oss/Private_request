@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireUser, getProfile } from "@/lib/auth/guards";
+import { requireUser, getProfile } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";

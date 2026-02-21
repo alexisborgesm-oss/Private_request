@@ -25,7 +25,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   const { data: r, error } = await supabase
     .from("private_requests")
     .select(
-      "id,status,party_size,requested_datetime,guest_message,proposed_start_datetime,proposed_end_datetime,proposed_price,final_price,approved_start_datetime,approved_end_datetime, proposed_location:locations!private_requests_proposed_location_id_fkey(name), proposed_instructor:instructors!private_requests_proposed_instructor_id_fkey(name), location:locations(name), instructor:instructors(name), cls:private_classes(name,duration_minutes,base_price)"
+      "id,status,party_size,requested_datetime,guest_message,proposed_start_datetime,proposed_end_datetime,proposed_price,final_price,approved_start_datetime,approved_end_datetime, proposed_location:locations!private_requests_proposed_location_id_fkey(name), proposed_instructor:instructors!private_requests_proposed_instructor_id_fkey(name), location:locations(name), instructor:instructors(name), private_class:private_classes(name,duration_minutes,base_price)"
     )
     .eq("id", params.id)
     .maybeSingle();
@@ -39,7 +39,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     <div className="mx-auto max-w-2xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-2xl font-semibold">{r.cls?.name ?? "Private request"}</div>
+          <div className="text-2xl font-semibold">{r.private_class?.name ?? "Private request"}</div>
           <div className="mt-2"><Status s={r.status} /></div>
         </div>
         <Link href="/p/requests"><Button variant="outline">Back</Button></Link>
@@ -48,7 +48,7 @@ export default async function Page({ params }: { params: { id: string } }) {
       <Card className="mt-6 space-y-2">
         <div className="text-sm text-ink/70">Requested: <span className="font-medium">{new Date(r.requested_datetime).toLocaleString()}</span></div>
         <div className="text-sm text-ink/70">Party size: <span className="font-medium">{r.party_size}</span></div>
-        <div className="text-sm text-ink/70">Base price: <span className="font-medium">${r.cls?.base_price}</span> • Duration: <span className="font-medium">{r.cls?.duration_minutes} min</span></div>
+        <div className="text-sm text-ink/70">Base price: <span className="font-medium">${r.private_class?.base_price}</span> • Duration: <span className="font-medium">{r.private_class?.duration_minutes} min</span></div>
         {r.guest_message ? <div className="pt-2 text-sm text-ink/70"><span className="font-medium">Notes:</span> {r.guest_message}</div> : null}
       </Card>
 

@@ -24,11 +24,7 @@ export default async function Page({ params }: { params: { id: string } }) {
   const supabase = supabaseServer();
   const { data: r, error } = await supabase
     .from("private_requests")
-    .select(
-      "id,status,party_size,requested_datetime,guest_message,proposed_start_datetime,proposed_end_datetime,proposed_price,final_price,approved_start_datetime,approved_end_datetime, 
-      proposed_location:locations!private_requests_proposed_location_id_fkey(name), proposed_instructor:instructors!private_requests_proposed_instructor_id_fkey(name), 
-    location:locations(name), instructor:instructors(name), private_class:private_classes(name,duration_minutes,base_price)"
-    )
+    .select(`id,status,party_size,requested_datetime,guest_message,proposed_start_datetime,proposed_end_datetime,proposed_price,final_price,approved_start_datetime,approved_end_datetime, proposed_location:locations!private_requests_proposed_location_id_fkey(name), proposed_instructor:instructors!private_requests_proposed_instructor_id_fkey(name),    location:locations(name), instructor:instructors(name), private_class:private_classes(name,duration_minutes,base_price) `)
     .eq("id", params.id)
     .maybeSingle();
   if (error) throw new Error(error.message);

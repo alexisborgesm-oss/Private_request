@@ -73,16 +73,32 @@ export async function acceptCounterOffer(requestId: string) {
     .eq("id", requestId)
     .maybeSingle();
 
-  if (r) {
-    const guestName = `${r.guest.first_name} ${r.guest.last_name}`;
-    const when = new Date(r.approved_start_datetime).toLocaleString();
-    const html = `<div style="font-family:ui-sans-serif,system-ui;line-height:1.5"><h2>Private session confirmed</h2><p>Hi ${guestName},</p><p>Your private session is confirmed:</p><ul><li><b>Class:</b> ${r.cls.name}</li><li><b>Time:</b> ${when}</li><li><b>Location:</b> ${r.location?.name ?? "TBD"}</li><li><b>Instructor:</b> ${r.instructor?.name ?? "TBD"}</li><li><b>Price:</b> $${r.final_price}</li></ul></div>`;
-    await sendEmailIfConfigured(r.guest.email, "Your private session is confirmed", html);
-    await sendSmsIfConfigured(r.guest.phone, `Civana: Your private ${r.cls.name} is confirmed for ${when}. Check your email/portal.`);
-  }
+    if (r) {
+    const guest = Array.isArray((r as any).guest) ? (r as any).guest[0] : (r as any).guest;
+    const cls = Array.isArray((r as any).cls) ? (r as any).cls[0] : (r as any).cls;
 
-  redirect("/p/requests");
-}
+    const guestName = `${guest?.first_name ?? ""} ${guest?.last_name ?? ""}`.trim() || "Guest";
+    const when = r.approved_start_datetime ? new Date(r.approved_start_datetime).toLocaleString() : "TBD";
+    const className = cls?.name ?? "Private class";
+
+    const html = `<div style="font-family:ui-sans-serif,system-ui;line-height:1.5">
+      <h2>Private session confirmed</h2>
+      <p>Hi ${guestName},</p>
+      <p>Your private session is confirmed:</p>
+      <ul>
+        <li><b>Class:</b> ${className}</li>
+        <li><b>Time:</b> ${when}</li>
+        <li><b>Location:</b> ${r.location?.name ?? "TBD"}</li>
+        <li><b>Instructor:</b> ${r.instructor?.name ?? "TBD"}</li>
+        <li><b>Price:</b> $${r.final_price}</li>
+      </ul>
+    </div>`;
+
+    if (guest?.email) {
+      await sendEmailIfConfigured(guest.email, "Your private session is confirmed", html);
+    }
+    await sendSmsIfConfigured(guest?.phone, `Civana: Your private ${className} is confirmed for ${when}. Check your email/portal.`);
+  }
 
 export async function declineCounterOffer(requestId: string) {
   const supabase = supabaseServer();

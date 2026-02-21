@@ -1,7 +1,13 @@
 "use server";
+
 import { supabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { sendEmailIfConfigured, sendSmsIfConfigured } from "@/lib/notify";
+
+function firstOrSelf<T>(v: T | T[] | null | undefined): T | null {
+  if (!v) return null;
+  return Array.isArray(v) ? (v[0] ?? null) : v;
+}
 
 export async function createRequest(formData: FormData) {
   const supabase = supabaseServer();
@@ -21,8 +27,9 @@ export async function createRequest(formData: FormData) {
     party_size,
     requested_datetime,
     guest_message,
-    status: "pending"
+    status: "pending",
   });
+
   if (error) throw new Error(error.message);
 
   redirect("/p/requests");
@@ -43,6 +50,7 @@ export async function updatePendingRequest(requestId: string, formData: FormData
     .select("id,status,guest_id")
     .eq("id", requestId)
     .maybeSingle();
+
   if (e0) throw new Error(e0.message);
   if (!existing) throw new Error("Request not found");
   if (existing.guest_id !== data.user.id) throw new Error("Unauthorized");
@@ -52,6 +60,7 @@ export async function updatePendingRequest(requestId: string, formData: FormData
     .from("private_requests")
     .update({ class_id, party_size, requested_datetime, guest_message })
     .eq("id", requestId);
+
   if (error) throw new Error(error.message);
 
   redirect("/p/requests");
@@ -62,23 +71,40 @@ export async function acceptCounterOffer(requestId: string) {
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/p/login");
 
-  const { error } = await supabase.rpc("guest_accept_counter_offer", { p_request_id: requestId });
+  const { error } = await supabase.rpc("guest_accept_counter_offer", {
+    p_request_id: requestId,
+  });
   if (error) throw new Error(error.message);
 
-  const { data: r } = await supabase
+  const { data: r, error: e1 } = await supabase
     .from("private_requests")
     .select(
-      "id,approved_start_datetime,final_price, guest:profiles(first_name,last_name,email,phone), cls:private_classes(name), instructor:instructors(name), location:locations(name)"
+      `
+      id,
+      approved_start_datetime,
+      final_price,
+      guest:profiles(first_name,last_name,email,phone),
+      cls:private_classes(name),
+      instructor:instructors(name),
+      location:locations(name)
+    `
     )
     .eq("id", requestId)
     .maybeSingle();
 
-    if (r) {
-    const guest = Array.isArray((r as any).guest) ? (r as any).guest[0] : (r as any).guest;
-    const cls = Array.isArray((r as any).cls) ? (r as any).cls[0] : (r as any).cls;
+  if (e1) throw new Error(e1.message);
 
-    const guestName = `${guest?.first_name ?? ""} ${guest?.last_name ?? ""}`.trim() || "Guest";
-    const when = r.approved_start_datetime ? new Date(r.approved_start_datetime).toLocaleString() : "TBD";
+  if (r) {
+    const guest = firstOrSelf((r as any).guest) as
+      | { first_name: any; last_name: any; email: any; phone: any }
+      | null;
+    const cls = firstOrSelf((r as any).cls) as { name: any } | null;
+
+    const guestName =
+      `${guest?.first_name ?? ""} ${guest?.last_name ?? ""}`.trim() || "Guest";
+    const when = r.approved_start_datetime
+      ? new Date(r.approved_start_datetime).toLocaleString()
+      : "TBD";
     const className = cls?.name ?? "Private class";
 
     const html = `<div style="font-family:ui-sans-serif,system-ui;line-height:1.5">
@@ -97,15 +123,23 @@ export async function acceptCounterOffer(requestId: string) {
     if (guest?.email) {
       await sendEmailIfConfigured(guest.email, "Your private session is confirmed", html);
     }
-    await sendSmsIfConfigured(guest?.phone, `Civana: Your private ${className} is confirmed for ${when}. Check your email/portal.`);
+    await sendSmsIfConfigured(
+      guest?.phone,
+      `Civana: Your private ${className} is confirmed for ${when}. Check your email/portal.`
+    );
   }
+
+  redirect("/p/requests");
+}
 
 export async function declineCounterOffer(requestId: string) {
   const supabase = supabaseServer();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/p/login");
 
-  const { error } = await supabase.rpc("guest_decline_counter_offer", { p_request_id: requestId });
+  const { error } = await supabase.rpc("guest_decline_counter_offer", {
+    p_request_id: requestId,
+  });
   if (error) throw new Error(error.message);
 
   redirect("/p/requests");

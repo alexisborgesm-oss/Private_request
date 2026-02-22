@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export function StaffPasswordLoginForm() {
-  const supabase = createClient();
+  const supabase = supabaseBrowser();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +30,7 @@ export function StaffPasswordLoginForm() {
       return;
     }
 
-    setMsg("Signed in. Now go to /staff.");
+    setMsg("Signed in. Now open the staff portal.");
   }
 
   return (

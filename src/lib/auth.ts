@@ -37,6 +37,6 @@ export async function requireStaff() {
 
 export async function requireLeader() {
   const { user, role } = await requireStaff();
-  if (role !== "programs_leader") redirect("/staff/front-desk/requests");
+  if (role !== "programs_leader") redirect("/staff/login");
   return { user };
 }

@@ -12,7 +12,7 @@ export default function Home() {
           <Link className="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-white" href="/p">
             Guest portal
           </Link>
-          <Link className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium" href="/staff/front-desk/requests">
+          <Link className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium" href="/staff">
             Staff portal
           </Link>
         </div>

@@ -19,7 +19,7 @@ function Status({ s }: { s: string }) {
 export default async function Page({ params }: { params: { id: string } }) {
   await requireLeader();
   const supabase = supabaseServer();
-
+ 
   const { data: r, error } = await supabase
     .from("private_requests")
     .select(
@@ -28,6 +28,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     .eq("id", params.id)
     .maybeSingle();
   if (error) throw new Error(error.message);
+  const cls = Array.isArray((r as any).cls) ? (r as any).cls[0] : (r as any).cls;
   if (!r) return <div>Not found.</div>;
 
   const { data: locations } = await supabase.from("locations").select("id,name,active").eq("active", true).order("name");
@@ -39,7 +40,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     <div className="max-w-3xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-2xl font-semibold">{r.cls?.name ?? "Request"}</div>
+          <div className="text-2xl font-semibold">{cls?.name ?? "Request"}</div>
           <div className="mt-2"><Status s={r.status} /></div>
         </div>
         <Link href="/staff/programs/requests"><Button variant="outline">Back</Button></Link>
@@ -62,7 +63,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             Requested: <span className="font-medium">{new Date(r.requested_datetime).toLocaleString()}</span>
           </div>
           <div className="mt-1 text-sm text-ink/70">
-            Party size: <span className="font-medium">{r.party_size}</span> • Duration: <span className="font-medium">{r.cls?.duration_minutes} min</span> • Base: <span className="font-medium">${r.cls?.base_price}</span>
+            Party size: <span className="font-medium">{r.party_size}</span> • Duration: <span className="font-medium">{cls?.duration_minutes} min</span> • Base: <span className="font-medium">${cls?.base_price}</span>
           </div>
         </Card>
 

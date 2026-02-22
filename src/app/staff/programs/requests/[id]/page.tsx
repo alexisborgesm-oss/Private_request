@@ -29,6 +29,10 @@ export default async function Page({ params }: { params: { id: string } }) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   const cls = Array.isArray((r as any).cls) ? (r as any).cls[0] : (r as any).cls;
+  const location = Array.isArray((r as any).location) ? (r as any).location[0] : (r as any).location;
+  const instructor = Array.isArray((r as any).instructor) ? (r as any).instructor[0] : (r as any).instructor;
+  const proposedLocation = Array.isArray((r as any).proposed_location) ? (r as any).proposed_location[0] : (r as any).proposed_location;
+  const proposedInstructor = Array.isArray((r as any).proposed_instructor) ? (r as any).proposed_instructor[0] : (r as any).proposed_instructor;
   if (!r) return <div>Not found.</div>;
 
   const { data: locations } = await supabase.from("locations").select("id,name,active").eq("active", true).order("name");
@@ -116,7 +120,7 @@ export default async function Page({ params }: { params: { id: string } }) {
             </form>
           ) : (
             <div className="mt-4 space-y-2 text-sm text-ink/70">
-              {r.proposed_start_datetime ? (
+              {proposed_start_datetime ? (
                 <>
                   <div>Proposed start: <span className="font-medium">{new Date(r.proposed_start_datetime).toLocaleString()}</span></div>
                   <div>Proposed end: <span className="font-medium">{new Date(r.proposed_end_datetime).toLocaleString()}</span></div>
@@ -135,8 +139,8 @@ export default async function Page({ params }: { params: { id: string } }) {
               <div className="text-sm font-semibold">Confirmed</div>
               <div className="mt-2 text-sm text-ink/70">Start: <span className="font-medium">{new Date(r.approved_start_datetime).toLocaleString()}</span></div>
               <div className="mt-1 text-sm text-ink/70">End: <span className="font-medium">{new Date(r.approved_end_datetime).toLocaleString()}</span></div>
-              <div className="mt-1 text-sm text-ink/70">Instructor: <span className="font-medium">{r.instructor?.name ?? "TBD"}</span></div>
-              <div className="mt-1 text-sm text-ink/70">Location: <span className="font-medium">{r.location?.name ?? "TBD"}</span></div>
+              <div className="mt-1 text-sm text-ink/70">Instructor: <span className="font-medium">{instructor?.name ?? "TBD"}</span></div>
+              <div className="mt-1 text-sm text-ink/70">Location: <span className="font-medium">{location?.name ?? "TBD"}</span></div>
               <div className="mt-1 text-sm text-ink/70">Price: <span className="font-medium">${r.final_price}</span></div>
             </div>
           ) : null}

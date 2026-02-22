@@ -99,7 +99,8 @@ export async function acceptCounterOffer(requestId: string) {
       | { first_name: any; last_name: any; email: any; phone: any }
       | null;
     const cls = firstOrSelf((r as any).cls) as { name: any } | null;
-
+    const location = firstOrSelf((r as any).location) as { name: any } | null;
+    const instructor = firstOrSelf((r as any).instructor) as { name: any } | null;
     const guestName =
       `${guest?.first_name ?? ""} ${guest?.last_name ?? ""}`.trim() || "Guest";
     const when = r.approved_start_datetime
@@ -114,8 +115,8 @@ export async function acceptCounterOffer(requestId: string) {
       <ul>
         <li><b>Class:</b> ${className}</li>
         <li><b>Time:</b> ${when}</li>
-        <li><b>Location:</b> ${r.location?.name ?? "TBD"}</li>
-        <li><b>Instructor:</b> ${r.instructor?.name ?? "TBD"}</li>
+        <li><b>Location:</b> ${location?.name ?? "TBD"}</li>
+        <li><b>Instructor:</b> ${instructor?.name ?? "TBD"}</li>
         <li><b>Price:</b> $${r.final_price}</li>
       </ul>
     </div>`;

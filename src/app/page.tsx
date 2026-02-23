@@ -1,6 +1,28 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Supabase recovery link is coming as URL hash on the root page:
+    // /#access_token=...&refresh_token=...&type=recovery
+    const hash = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+
+    if (!hash) return;
+
+    const params = new URLSearchParams(hash);
+    if (params.get("type") === "recovery") {
+      // Send to reset page and keep hash so /auth/reset can setSession
+      router.replace("/auth/reset" + window.location.hash);
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto max-w-2xl px-6 py-16">

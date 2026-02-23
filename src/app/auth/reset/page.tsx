@@ -5,10 +5,12 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
-function readHashParams() {
-  const raw = typeof window !== "undefined" ? window.location.hash : "";
-  const hash = raw.startsWith("#") ? raw.slice(1) : raw;
-  return new URLSearchParams(hash);
+function getHashParam(name: string) {
+  const raw = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const params = new URLSearchParams(raw);
+  return params.get(name);
 }
 
 export default function ResetPasswordPage() {
@@ -16,41 +18,33 @@ export default function ResetPasswordPage() {
 
   const [ready, setReady] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
       setMsg(null);
 
-      const params = readHashParams();
-      const type = params.get("type");
-      const access_token = params.get("access_token");
-      const refresh_token = params.get("refresh_token");
+      // Read tokens from URL hash
+      const type = getHashParam("type");
+      const access_token = getHashParam("access_token");
+      const refresh_token = getHashParam("refresh_token");
 
       if (type !== "recovery") {
-        setMsg("This link is not a password recovery link. Please request a new reset link.");
+        setMsg("This link is not a recovery link. Please request a new reset link.");
         setReady(true);
         return;
       }
 
-      if (!access_token) {
-        setMsg("Missing access token. Please request a new reset link.");
+      if (!access_token || !refresh_token) {
+        setMsg("Recovery link is missing tokens. Please request a new reset link.");
         setReady(true);
         return;
       }
 
-      if (!refresh_token) {
-        // Without refresh token, setSession cannot work in this SDK version.
-        setMsg(
-          "Invalid recovery link: refresh token not found. Please request a NEW reset password link and open it once (preferably in an incognito window)."
-        );
-        setReady(true);
-        return;
-      }
-
+      // Set session BEFORE allowing password update
       const { error } = await supabase.auth.setSession({ access_token, refresh_token });
 
       if (error) {
@@ -59,10 +53,18 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      setReady(true);
+      // Verify session exists now
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        setMsg("Auth session missing. Please request a new reset link.");
+        setReady(true);
+        return;
+      }
 
-      // Optional: hide tokens from the URL after session is stored
+      // Optional: clean URL after session set (avoid leaking tokens)
       // history.replaceState(null, "", "/auth/reset");
+
+      setReady(true);
     })();
   }, [supabase]);
 
@@ -100,34 +102,34 @@ export default function ResetPasswordPage() {
         {!ready ? (
           <div className="text-sm text-ink/70">Preparing reset…</div>
         ) : (
-          <>
-            <form onSubmit={onSubmit} className="space-y-3">
-              <Input
-                label="New password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e: any) => setPassword(e.target.value)}
-              />
+          <form onSubmit={onSubmit} className="space-y-3">
+            <Input
+              label="New password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={password}
+              onChange={(e: any) => setPassword(e.target.value)}
+            />
 
-              <Input
-                label="Confirm new password"
-                name="password2"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password2}
-                onChange={(e: any) => setPassword2(e.target.value)}
-              />
+            <Input
+              label="Confirm new password"
+              name="password2"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={password2}
+              onChange={(e: any) => setPassword2(e.target.value)}
+            />
 
-              <Button type="submit" variant="teal" disabled={loading}>
-                {loading ? "Updating..." : "Update password"}
-              </Button>
-            </form>
+            <Button type="submit" variant="teal" disabled={loading}>
+              {loading ? "Updating..." : "Update password"}
+            </Button>
 
-            {msg ? (
+            {msg ? <div className="text-sm text-ink/70">{msg}</div> : null}
+          </form>
+          {msg ? (
               <div className="mt-3 text-sm text-ink/70">
                 {msg}
                 <div className="mt-3">
@@ -141,7 +143,7 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
             ) : null}
-          </>
+         </>
         )}
       </div>
     </div>

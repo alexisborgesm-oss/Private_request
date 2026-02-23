@@ -5,6 +5,11 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+
+  // Supabase recovery links usually include type=recovery
+  const type = url.searchParams.get("type");
+
+  // Your app uses ?next=... for normal login redirects
   const next = url.searchParams.get("next") ?? "/p";
 
   const cookieStore = cookies();
@@ -31,5 +36,11 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
+  // ✅ If it's a password recovery flow, send user to the reset page
+  if (type === "recovery") {
+    return NextResponse.redirect(new URL("/auth/reset", url.origin));
+  }
+
+  // Normal login flow
   return NextResponse.redirect(new URL(next, url.origin));
 }

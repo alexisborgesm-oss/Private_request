@@ -126,22 +126,18 @@ export default function ResetPasswordPage() {
             <Button type="submit" variant="teal" disabled={loading}>
               {loading ? "Updating..." : "Update password"}
             </Button>
-
-            {msg ? <div className="text-sm text-ink/70">{msg}</div> : null}
-          </form>
-          
-              <div className="mt-3 text-sm text-ink/70">
-                {msg}
-                <div className="mt-3">
-                  <Button
+            <Button
                     variant="outline"
                     type="button"
                     onClick={() => (window.location.href = "/staff/login")}
                   >
                     Go to staff login
-                  </Button>
-                </div>
-              </div>
+            </Button>
+            {msg ? <div className="text-sm text-ink/70">{msg}</div> : null}
+            
+          </form>
+          
+              
            
         )}
       </div>

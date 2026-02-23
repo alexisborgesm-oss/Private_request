@@ -16,38 +16,28 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Supabase put tokens in hash
-    const hash = window.location.hash.startsWith("#")
-      ? window.location.hash.slice(1)
-      : window.location.hash;
-
-    const params = new URLSearchParams(hash);
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-    const type = params.get("type");
-
-    if (type !== "recovery") {
-      setMsg("This link is not a password recovery link.");
-      setReady(true);
-      return;
-    }
-
-    if (!access_token || !refresh_token) {
-      setMsg("Recovery tokens not found in URL. Please request a new reset link.");
-      setReady(true);
-      return;
-    }
-
     (async () => {
-      const { error } = await supabase.auth.setSession({
-        access_token,
-        refresh_token,
-      });
+      setMsg(null);
 
-      if (error) setMsg(error.message);
+      // This reads tokens from the URL hash and sets the session internally
+      const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+
+      if (error) {
+        setMsg(error.message);
+        setReady(true);
+        return;
+      }
+
+      // If there is no session after parsing the URL, link is invalid/expired
+      if (!data?.session) {
+        setMsg("Auth session missing. Please request a new reset link.");
+        setReady(true);
+        return;
+      }
+
       setReady(true);
 
-      // Optional: clean hash from URL after session set
+      // Optional: clean the URL so tokens aren't visible
       // history.replaceState(null, "", "/auth/reset");
     })();
   }, [supabase]);
@@ -74,7 +64,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    setMsg("Password updated. You can now sign in with email + password.");
+    setMsg("Password updated successfully. You can now sign in.");
   }
 
   return (

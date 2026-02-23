@@ -129,7 +129,7 @@ export default function ResetPasswordPage() {
 
             {msg ? <div className="text-sm text-ink/70">{msg}</div> : null}
           </form>
-          {msg ? (
+          
               <div className="mt-3 text-sm text-ink/70">
                 {msg}
                 <div className="mt-3">
@@ -142,7 +142,7 @@ export default function ResetPasswordPage() {
                   </Button>
                 </div>
               </div>
-            ) : null}
+           
         )}
       </div>
     </div>

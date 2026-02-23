@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
-
   useEffect(() => {
     // Supabase recovery link is coming as URL hash on the root page:
     // /#access_token=...&refresh_token=...&type=recovery

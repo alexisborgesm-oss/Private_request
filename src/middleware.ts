@@ -1,13 +1,11 @@
 // src/middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+
+type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 export async function middleware(req: NextRequest) {
-  let res = NextResponse.next({
-    request: {
-      headers: req.headers,
-    },
-  });
+  let res = NextResponse.next({ request: { headers: req.headers } });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +15,7 @@ export async function middleware(req: NextRequest) {
         getAll() {
           return req.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
             res.cookies.set(name, value, options);
           });
@@ -26,7 +24,7 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // IMPORTANT: esto fuerza a Supabase a leer/refrescar sesión y setear cookies si hace falta
+  // IMPORTANT: Esto fuerza a Supabase a leer/refrescar la sesión y escribir cookies
   await supabase.auth.getUser();
 
   return res;
@@ -35,7 +33,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     /*
-      corre en todo menos assets estáticos
+      Corre en todo lo que sea páginas (no assets).
+      Esto es lo recomendado para que las cookies de sesión se mantengan bien.
     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

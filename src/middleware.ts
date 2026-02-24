@@ -1,7 +1,11 @@
-import { createServerClient } from "@supabase/ssr";
+// src/middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+
+type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 export async function middleware(req: NextRequest) {
+  // 🔑 IMPORTANTE: forward headers del request
   let res = NextResponse.next({
     request: {
       headers: req.headers,
@@ -13,33 +17,26 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value;
+        getAll() {
+          return req.cookies.getAll();
         },
-        set(name: string, value: string, options: any) {
-          res.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-        },
-        remove(name: string, options: any) {
-          res.cookies.set({
-            name,
-            value: "",
-            ...options,
+        setAll(cookiesToSet: CookieToSet[]) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options);
           });
         },
       },
     }
   );
 
-  // 🔥 Esto es CRÍTICO: fuerza sincronización de sesión
+  // Fuerza lectura/refresco de sesión en middleware (edge)
   await supabase.auth.getUser();
 
   return res;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireUser, getProfile } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,21 +16,39 @@ function Status({ s }: { s: string }) {
 }
 
 export default async function Page() {
-  await requireUser();
-  const profile = await getProfile();
- 
-  if (profile?.role === "front_desk" || profile?.role === "programs_leader") {
-  redirect("/staff");
-  }
-  if (!profile) redirect("/p/profile");
+  // ✅ retorna el user autenticado
+  const user = await requireUser();
 
   const supabase = supabaseServer();
+
+  // ✅ lee SOLO el role para decidir si es staff o guest
+  const { data: profile, error: pErr } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (pErr) throw new Error(pErr.message);
+
+  // ✅ si es staff, que nunca caiga en guest portal
+  if (profile?.role === "front_desk" || profile?.role === "programs_leader") {
+    redirect("/staff");
+  }
+
+  // ✅ si no existe profile todavía, onboarding guest
+  if (!profile) {
+    redirect("/p/profile");
+  }
+
+  // ✅ IMPORTANTE: filtra por guest_id (si no, intentas leer requests de todos)
   const { data: rows, error } = await supabase
     .from("private_requests")
     .select(
       "id,status,party_size,requested_datetime,final_price,approved_start_datetime,proposed_price,proposed_start_datetime, location:locations(name), instructor:instructors(name), cls:private_classes(name,duration_minutes,base_price)"
     )
+    .eq("guest_id", user.id)
     .order("created_at", { ascending: false });
+
   if (error) throw new Error(error.message);
 
   return (
@@ -38,47 +56,95 @@ export default async function Page() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="text-2xl font-semibold">My private requests</div>
-          <div className="mt-1 text-sm text-ink/70">Edit only while pending. Counter-offers require accept/decline.</div>
+          <div className="mt-1 text-sm text-ink/70">
+            Edit only while pending. Counter-offers require accept/decline.
+          </div>
         </div>
-        <Link href="/p/requests/new"><Button variant="teal">New request</Button></Link>
+        <Link href="/p/requests/new">
+          <Button variant="teal">New request</Button>
+        </Link>
       </div>
 
       <div className="mt-6 space-y-4">
-        {(rows ?? []).map((r: any) => (
-          <Card key={r.id}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="text-base font-semibold">{r.cls?.name ?? "Private class"}</div>
-                  <Status s={r.status} />
-                </div>
-                <div className="mt-2 text-sm text-ink/70">
-                  Requested: <span className="font-medium">{new Date(r.requested_datetime).toLocaleString()}</span> • Party size: <span className="font-medium">{r.party_size}</span>
-                </div>
-                {r.status === "counter_proposed" ? (
-                  <div className="mt-2 text-sm text-ink/70">
-                    Offer: <span className="font-medium">{new Date(r.proposed_start_datetime).toLocaleString()}</span> • Price: <span className="font-medium">${r.proposed_price}</span>
-                  </div>
-                ) : null}
-                {r.status === "approved" ? (
-                  <div className="mt-2 text-sm text-ink/70">
-                    Confirmed: <span className="font-medium">{new Date(r.approved_start_datetime).toLocaleString()}</span>
-                    {r.location?.name ? <> • Location: <span className="font-medium">{r.location.name}</span></> : null}
-                    {r.instructor?.name ? <> • Instructor: <span className="font-medium">{r.instructor.name}</span></> : null}
-                    {r.final_price ? <> • Price: <span className="font-medium">${r.final_price}</span></> : null}
-                  </div>
-                ) : null}
-              </div>
+        {(rows ?? []).map((r: any) => {
+          const cls = Array.isArray(r.cls) ? r.cls[0] : r.cls;
+          const location = Array.isArray(r.location) ? r.location[0] : r.location;
+          const instructor = Array.isArray(r.instructor) ? r.instructor[0] : r.instructor;
 
-              {r.status === "pending" ? (
-                <Link href={`/p/requests/${r.id}/edit`}><Button>Edit</Button></Link>
-              ) : (
-                <Link href={`/p/requests/${r.id}`}><Button variant="outline">View</Button></Link>
-              )}
-            </div>
+          return (
+            <Card key={r.id}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-base font-semibold">{cls?.name ?? "Private class"}</div>
+                    <Status s={r.status} />
+                  </div>
+
+                  <div className="mt-2 text-sm text-ink/70">
+                    Requested:{" "}
+                    <span className="font-medium">
+                      {new Date(r.requested_datetime).toLocaleString()}
+                    </span>{" "}
+                    • Party size: <span className="font-medium">{r.party_size}</span>
+                  </div>
+
+                  {r.status === "counter_proposed" ? (
+                    <div className="mt-2 text-sm text-ink/70">
+                      Offer:{" "}
+                      <span className="font-medium">
+                        {new Date(r.proposed_start_datetime).toLocaleString()}
+                      </span>{" "}
+                      • Price: <span className="font-medium">${r.proposed_price}</span>
+                    </div>
+                  ) : null}
+
+                  {r.status === "approved" ? (
+                    <div className="mt-2 text-sm text-ink/70">
+                      Confirmed:{" "}
+                      <span className="font-medium">
+                        {new Date(r.approved_start_datetime).toLocaleString()}
+                      </span>
+                      {location?.name ? (
+                        <>
+                          {" "}
+                          • Location: <span className="font-medium">{location.name}</span>
+                        </>
+                      ) : null}
+                      {instructor?.name ? (
+                        <>
+                          {" "}
+                          • Instructor: <span className="font-medium">{instructor.name}</span>
+                        </>
+                      ) : null}
+                      {r.final_price ? (
+                        <>
+                          {" "}
+                          • Price: <span className="font-medium">${r.final_price}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+
+                {r.status === "pending" ? (
+                  <Link href={`/p/requests/${r.id}/edit`}>
+                    <Button>Edit</Button>
+                  </Link>
+                ) : (
+                  <Link href={`/p/requests/${r.id}`}>
+                    <Button variant="outline">View</Button>
+                  </Link>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+
+        {(rows ?? []).length === 0 ? (
+          <Card>
+            <div className="text-sm text-ink/70">No requests yet.</div>
           </Card>
-        ))}
-        {(rows ?? []).length === 0 ? <Card><div className="text-sm text-ink/70">No requests yet.</div></Card> : null}
+        ) : null}
       </div>
     </div>
   );

@@ -1,25 +1,22 @@
 "use server";
 
 import { supabaseServer } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 
 export async function staffPasswordLogin(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
   if (!email || !password) {
-    // redirige con query para mostrar error simple
-    redirect("/staff/login?e=missing");
+    return { ok: false, error: "missing" as const };
   }
 
   const supabase = supabaseServer();
-
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect("/staff/login?e=invalid");
+    return { ok: false, error: "invalid" as const };
   }
 
-  // IMPORTANT: si login fue ok, ya hay cookies -> entra al staff
-  redirect("/staff");
+  // 👇 NO redirect aquí
+  return { ok: true as const };
 }

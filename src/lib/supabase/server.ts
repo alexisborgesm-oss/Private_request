@@ -16,9 +16,15 @@ export function supabaseServer() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet: CookieToSet[]) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set({ name, value, ...options });
-          });
+          // En Server Components, cookieStore.set puede lanzar error.
+          // No queremos que eso rompa el SSR y termine en redirect a /staff/login.
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set({ name, value, ...options });
+            });
+          } catch {
+            // noop (middleware ya mantiene la sesión fresca)
+          }
         },
       },
     }

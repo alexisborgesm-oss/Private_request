@@ -1,4 +1,4 @@
-import { staffPasswordLogin } from "./actions";
+import { staffPasswordLogin } from "./action";
 
 export default function Page({
   searchParams,

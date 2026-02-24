@@ -49,7 +49,7 @@ export async function requireStaff() {
 
   // If logged in but not staff, kick them out of staff area
   if (role !== "front_desk" && role !== "programs_leader") {
-    redirect("/p/requests");
+    redirect("/staff/login");
   }
 
   return { user, role };

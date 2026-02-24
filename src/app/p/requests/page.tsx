@@ -18,6 +18,10 @@ function Status({ s }: { s: string }) {
 export default async function Page() {
   await requireUser();
   const profile = await getProfile();
+ 
+  if (profile?.role === "front_desk" || profile?.role === "programs_leader") {
+  redirect("/staff");
+  }
   if (!profile) redirect("/p/profile");
 
   const supabase = supabaseServer();

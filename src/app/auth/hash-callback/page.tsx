@@ -1,13 +1,14 @@
 "use client";
+
 export const dynamic = "force-dynamic";
 export const revalidate = false;
 export const fetchCache = "force-no-store";
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 function parseHashTokens(hash: string) {
-  // hash viene como "#access_token=...&refresh_token=...&type=magiclink"
   const raw = hash.startsWith("#") ? hash.slice(1) : hash;
   const params = new URLSearchParams(raw);
   const access_token = params.get("access_token") ?? undefined;
@@ -18,10 +19,11 @@ function parseHashTokens(hash: string) {
 export default function HashCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = useMemo(() => supabaseBrowser(), []);
   const [msg, setMsg] = useState("Signing you in…");
 
   useEffect(() => {
+    const supabase = supabaseBrowser();
+
     (async () => {
       try {
         const next = searchParams.get("next") ?? "/p";
@@ -39,14 +41,14 @@ export default function HashCallbackPage() {
         const { access_token, refresh_token } = parseHashTokens(window.location.hash);
 
         if (access_token && refresh_token) {
-          const { error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
           if (error) throw error;
 
-          // Limpia el hash para que no quede el token en la URL
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search
+          );
 
           router.replace(next);
           return;
@@ -57,7 +59,7 @@ export default function HashCallbackPage() {
         setMsg(e?.message ?? "Could not complete sign-in. Please request a new link.");
       }
     })();
-  }, [router, searchParams, supabase]);
+  }, [router, searchParams]);
 
   return (
     <div className="mx-auto max-w-md p-6">

@@ -42,12 +42,12 @@ export default async function Page() {
 
   // ✅ IMPORTANTE: filtra por guest_id (si no, intentas leer requests de todos)
   const { data: rows, error } = await supabase
-    .from("private_requests")
-    .select(
-      "id,status,party_size,requested_datetime,final_price,approved_start_datetime,proposed_price,proposed_start_datetime, location:locations(name), instructor:instructors(name), cls:private_classes(name,duration_minutes,base_price)"
-    )
-    .eq("guest_id", user.id)
-    .order("created_at", { ascending: false });
+  .from("private_requests")
+  .select(
+    "id,status,party_size,requested_datetime,final_price,approved_start_datetime,proposed_price,proposed_start_datetime, location:locations!private_requests_location_id_fkey(name), proposed_location:locations!private_requests_proposed_location_id_fkey(name), instructor:instructors(name), cls:private_classes(name,duration_minutes,base_price)"
+  )
+  .eq("guest_id", user.id)
+  .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
@@ -68,7 +68,7 @@ export default async function Page() {
       <div className="mt-6 space-y-4">
         {(rows ?? []).map((r: any) => {
           const cls = Array.isArray(r.cls) ? r.cls[0] : r.cls;
-          const location = Array.isArray(r.location) ? r.location[0] : r.location;
+          const proposedLocation = Array.isArray(r.proposed_location) ? r.proposed_location[0] : r.proposed_location;
           const instructor = Array.isArray(r.instructor) ? r.instructor[0] : r.instructor;
 
           return (
@@ -104,10 +104,10 @@ export default async function Page() {
                       <span className="font-medium">
                         {new Date(r.approved_start_datetime).toLocaleString()}
                       </span>
-                      {location?.name ? (
+                      {proposedLocation?.name ? (
                         <>
                           {" "}
-                          • Location: <span className="font-medium">{location.name}</span>
+                          • Location: <span className="font-medium">{proposedLocation.name}</span>
                         </>
                       ) : null}
                       {instructor?.name ? (

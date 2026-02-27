@@ -33,8 +33,10 @@ export async function getProfile() {
     .eq("id", data.user.id)
     .maybeSingle();
 
-  if (profileError) return null;
-
+  if (profileError){
+    consoleconsole.error(profileError);
+    return null;
+  }
   return profile as any;
 }
 

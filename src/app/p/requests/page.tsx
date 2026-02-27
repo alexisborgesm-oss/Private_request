@@ -44,7 +44,7 @@ export default async function Page() {
   const { data: rows, error } = await supabase
   .from("private_requests")
   .select(
-    "id,status,party_size,requested_datetime,final_price,approved_start_datetime,proposed_price,proposed_start_datetime, location:locations!private_requests_location_id_fkey(name), proposed_location:locations!private_requests_proposed_location_id_fkey(name), instructor:instructors(name), cls:private_classes(name,duration_minutes,base_price)"
+    "id,status,party_size,requested_datetime,final_price,approved_start_datetime,proposed_price,proposed_start_datetime, location:locations!private_requests_location_id_fkey(name), proposed_location:locations!private_requests_proposed_location_id_fkey(name), instructor:instructors!private_requests_instructor_id_fkey(name), proposed_instructor:instructors!private_requests_proposed_instructor_id_fkey(name), cls:private_classes(name,duration_minutes,base_price)"
   )
   .eq("guest_id", user.id)
   .order("created_at", { ascending: false });
@@ -69,8 +69,7 @@ export default async function Page() {
         {(rows ?? []).map((r: any) => {
           const cls = Array.isArray(r.cls) ? r.cls[0] : r.cls;
           const proposedLocation = Array.isArray(r.proposed_location) ? r.proposed_location[0] : r.proposed_location;
-          const instructor = Array.isArray(r.instructor) ? r.instructor[0] : r.instructor;
-
+          const proposedInstructor = Array.isArray(r.proposed_instructor) ? r.proposed_instructor[0] : r.proposed_instructor;
           return (
             <Card key={r.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -110,10 +109,10 @@ export default async function Page() {
                           • Location: <span className="font-medium">{proposedLocation.name}</span>
                         </>
                       ) : null}
-                      {instructor?.name ? (
+                      {proposedInstructor?.name ? (
                         <>
                           {" "}
-                          • Instructor: <span className="font-medium">{instructor.name}</span>
+                          • Instructor: <span className="font-medium">{proposedInstructor.name}</span>
                         </>
                       ) : null}
                       {r.final_price ? (

@@ -1,9 +1,10 @@
-"use client";
-
 export const dynamic = "force-dynamic";
 export const revalidate = false;
 export const fetchCache = "force-no-store";
-
+import HashCallbackClient from "./HashCallbackClient";
+export default function Page() {
+  return <HashCallbackClient />;
+}
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";

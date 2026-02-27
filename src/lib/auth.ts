@@ -34,7 +34,7 @@ export async function getProfile() {
     .maybeSingle();
 
   if (profileError){
-    consoleconsole.error(profileError);
+    console.error(profileError);
     return null;
   }
   return profile as any;

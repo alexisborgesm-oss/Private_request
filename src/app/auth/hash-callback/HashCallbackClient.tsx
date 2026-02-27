@@ -4,14 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-function parseHashTokens(hash: string) {
-  const raw = hash.startsWith("#") ? hash.slice(1) : hash;
-  const params = new URLSearchParams(raw);
-  const access_token = params.get("access_token") ?? undefined;
-  const refresh_token = params.get("refresh_token") ?? undefined;
-  return { access_token, refresh_token };
-}
-
 export default function HashCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,26 +16,11 @@ export default function HashCallbackClient() {
       try {
         const next = searchParams.get("next") ?? "/p";
 
-        const code = searchParams.get("code");
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-          router.replace(next);
-          return;
-        }
+        // Esto fuerza a Supabase a procesar el code PKCE
+        const { error } = await supabase.auth.getUser();
+        if (error) throw error;
 
-        const { access_token, refresh_token } = parseHashTokens(window.location.hash);
-
-        if (access_token && refresh_token) {
-          const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-          if (error) throw error;
-
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
-          router.replace(next);
-          return;
-        }
-
-        setMsg("Session missing. Please request a new link.");
+        router.replace(next);
       } catch (e: any) {
         setMsg(e?.message ?? "Could not complete sign-in. Please request a new link.");
       }

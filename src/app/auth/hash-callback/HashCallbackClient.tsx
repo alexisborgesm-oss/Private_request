@@ -24,7 +24,6 @@ export default function HashCallbackClient() {
       try {
         const next = searchParams.get("next") ?? "/p";
 
-        // PKCE (?code=...)
         const code = searchParams.get("code");
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -33,8 +32,8 @@ export default function HashCallbackClient() {
           return;
         }
 
-        // Implicit (#access_token=...&refresh_token=...)
         const { access_token, refresh_token } = parseHashTokens(window.location.hash);
+
         if (access_token && refresh_token) {
           const { error } = await supabase.auth.setSession({ access_token, refresh_token });
           if (error) throw error;

@@ -1,10 +1,10 @@
 "use client";
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+
 function parseHashTokens(hash: string) {
   // hash viene como "#access_token=...&refresh_token=...&type=magiclink"
   const raw = hash.startsWith("#") ? hash.slice(1) : hash;

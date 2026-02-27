@@ -10,8 +10,10 @@ export type Role = "guest" | "front_desk" | "programs_leader";
  */
 async function requireAuth(redirectTo: string) {
   const supabase = supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect(redirectTo);
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) redirect(redirectTo);
+
   return data.user;
 }
 
@@ -22,14 +24,16 @@ export async function requireUser() {
 
 export async function getProfile() {
   const supabase = supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return null;
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", data.user.id)
     .maybeSingle();
+
+  if (profileError) return null;
 
   return profile as any;
 }
